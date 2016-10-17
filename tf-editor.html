@@ -1,0 +1,34 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`tf-editor`
+Web based volume rendering transfer function editor
+
+@demo demo/index.html 
+-->
+
+<dom-module id="tf-editor">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]</h2>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'tf-editor',
+
+      properties: {
+        prop1: {
+          type: String,
+          value: 'tf-editor',
+        },
+      },
+
+    });
+  </script>
+</dom-module>
