@@ -1,10 +1,13 @@
+<!-- Manage external imports -->
 <link rel="import" href="../polymer/polymer.html">
+<script type="text/javascript" src="../d3/d3.min.js"></script>
+<!--<link rel="import" href="/d3js/d3.html">-->
 
 <!--
 `tf-editor`
-Web based volume rendering transfer function editor
+A Web based volume rendering transfer function editor
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 
 <dom-module id="tf-editor">
@@ -13,8 +16,19 @@ Web based volume rendering transfer function editor
       :host {
         display: block;
       }
+
+      .bar rect {
+        fill: steelblue;
+      }
+
+      .bar text {
+        fill: #fff;
+        font: 10px sans-serif;
+      }
     </style>
-    <h2>Hello [[prop1]]</h2>
+    <div id="container">
+      <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
+    </div>
   </template>
 
   <script>
@@ -22,11 +36,188 @@ Web based volume rendering transfer function editor
 
       is: 'tf-editor',
 
+      createElements: function () {
+        // Custom margins
+        this.margin = {top: 10, right: 20, bottom: 20, left: 25};
+        this.formatCount = d3.format(",.0f");
+
+        // Axis scales
+        this.xScale = d3.scaleLinear();
+        this.yScale = d3.scaleLinear();
+        this.binScale = d3.scaleLinear();
+
+        // Interpolation line
+        this.line = d3.line();
+
+        // Create histogram object
+        this.bins = d3.histogram();
+
+        // Control points
+        this.controlPoints = [];
+
+        // Keep track of control points interaction
+        this.dragged = null,
+        this.selected = null;
+      },
+
+      initializeElements: function() {
+        var extent = d3.extent(this._data);
+        var me = this;
+        this.xScale
+          .rangeRound([0, this._width])
+          .domain(extent);
+        this.yScale
+          .domain([0, 1])
+          .range([this._height, 0]);
+        this.binScale
+          .range([this._height, 0]);
+        this.bins
+          .domain(this.xScale.domain())
+          .thresholds(this.xScale.ticks(this.nbins));
+        this.controlPoints.push([extent[0], 0]);
+        this.controlPoints.push([extent[1], 1]);
+        this.selected = this.controlPoints[0];
+        this.line
+          .x(function(d) { return me.xScale(d[0]); })
+          .y(function(d) { return me.yScale(d[1]); })
+          .curve(d3.curveLinear);
+      },
+
+      // Perform the drawing
+      drawChart: function () {
+        var me = this;
+        var g = this.svg.append("g")
+            .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
+
+        // Add data to compute the histogram
+        var bins = this.bins(this._data);
+        this.binScale.domain([0, d3.max(bins, function(d) { return d.length; })])
+
+        // Draw hitogram as a refence point
+        var bar = g.selectAll(".bar")
+          .data(bins)
+          .enter().append("g")
+            .attr("class", "bar")
+            .attr("transform", function(d) { return "translate(" + me.xScale(d.x0) + "," + me.binScale(d.length) + ")"; });
+
+        bar.append("rect")
+            .attr("x", 1)
+            .attr("width", this.xScale(bins[0].x1) - this.xScale(bins[0].x0) - 1)
+            .attr("height", function(d) { return me._height - me.binScale(d.length); });
+
+        // Draw control points
+        g.append("rect")
+            .attr("width", me._width)
+            .attr("height", me._height)
+            .style("opacity", 0)
+            .on("mousedown", function(){var _that = me; me.redraw.call(_that);});
+
+        g.append("path")
+            .datum(me.controlPoints)
+            .attr("class", "line")
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .call(function(){var _that = me; me.redraw.call(_that);});
+
+        // Draw axis
+        g.append("g")
+            .attr("class", "axis axis--x")
+            .attr("transform", "translate(0," + me._height + ")")
+            .call(d3.axisBottom(me.xScale));
+
+        g.append("g")
+            .attr("class", "axis axis--y")
+            .attr("transform", "translate(0,0)")
+            .call(d3.axisLeft(me.yScale));
+      },
+
+      // Update the chart content
+      redraw: function() {
+        var me = this;
+        var svg = d3.select(me.$$('svg')).select("g")
+        svg.select("path").attr("d", me.line);
+
+        var circle = svg.selectAll("circle")
+            .data(me.controlPoints, function(d) { return d; });
+
+        circle.enter().append("circle")
+            .attr("r", 1e-6)
+            .on("mousedown", function(d) { var _that = me; me.selected = me.dragged = d; me.redraw.call(_that); })
+          .transition()
+            .duration(750)
+            //.ease("elastic")
+            .attr("r", 5.0);
+
+        circle.classed("selected", function(d) { return d === me.selected; })
+            .attr("cx", function(d) { return me.xScale(d[0]); })
+            .attr("cy", function(d) { return me.yScale(d[1]); });
+
+        circle.exit().remove();
+
+        if (d3.event) {
+          d3.event.preventDefault();
+          d3.event.stopPropagation();
+        }
+      },
+
+      // Refresh the control points
+      refresh: function() {
+
+      },
+
+      /////// User interaction related event callbacks ////////
+
+      mousedown: function(){
+        console.log("mousedown!!");
+      },
+
+      /////// Polymer lifecycle callbacks /////////////
+
+      // Initialize elements when loaded into DOM
+      created: function() {
+        this.createElements();
+      },
+
+      // Perform the drawing of the transfer function
+      ready: function() {
+        this.scopeSubtree(this.$.container, true);
+        // Access the svg dom element
+        this.svg = d3.select(this.$$('svg'));
+        this._width = +this.svg.attr("width") - this.margin.left - this.margin.right;
+        this._height = +this.svg.attr("height") - this.margin.top - this.margin.bottom;
+        // Create ramdom test data
+        this._data = d3.range(1000).map(function(){return Math.random() * 255 | 0;});
+        //this._data = d3.range(1000).map(d3.randomBates(10));
+        this.initializeElements();
+        this.drawChart();
+      },
+
+      // Define Polymer component properties
       properties: {
-        prop1: {
+        id: {
           type: String,
-          value: 'tf-editor',
+          value: 'tf-1',
         },
+        name: {
+          type: String,
+          value: 'TF-Editor',
+        },
+        width: {
+          type: Number,
+          value: 350,
+        },
+        height: {
+          type: Number,
+          value: 200,
+        },
+        nbins: {
+          type: Number,
+          value: 100,
+        },
+        interpolate: {
+          type: String,
+          value: "linear"
+        }
       },
 
     });
