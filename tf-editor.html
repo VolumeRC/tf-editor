@@ -25,6 +25,30 @@ A Web based volume rendering transfer function editor
         fill: #fff;
         font: 10px sans-serif;
       }
+
+      rect {
+        fill: none;
+        pointer-events: all;
+      }
+
+      .line {
+        fill: steelblue;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+      }
+
+      circle {
+        fill: #fff;
+        fill-opacity: .2;
+        cursor: move;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+      }
+
+      .selected {
+        fill: #ff7f0e;
+        stroke: #ff7f0e;
+      }
     </style>
     <div id="container">
       <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
@@ -47,7 +71,7 @@ A Web based volume rendering transfer function editor
         this.binScale = d3.scaleLinear();
 
         // Interpolation line
-        this.line = d3.line();
+        this.area = d3.area();
 
         // Create histogram object
         this.bins = d3.histogram();
@@ -77,9 +101,10 @@ A Web based volume rendering transfer function editor
         this.controlPoints.push([extent[0], 0]);
         this.controlPoints.push([extent[1], 1]);
         this.selected = this.controlPoints[0];
-        this.line
+        this.area
           .x(function(d) { return me.xScale(d[0]); })
-          .y(function(d) { return me.yScale(d[1]); })
+          .y0(function(d) { return me.yScale(d[1]); })
+          .y1(this._height)
           .curve(d3.curveLinear);
       },
 
@@ -110,12 +135,12 @@ A Web based volume rendering transfer function editor
             .attr("width", me._width)
             .attr("height", me._height)
             .style("opacity", 0)
-            .on("mousedown", function(){var _that = me; me.redraw.call(_that);});
+            .on("mousedown", function(){var _that = me; me.mousedown.call(_that);});
 
         g.append("path")
             .datum(me.controlPoints)
             .attr("class", "line")
-            .attr("fill", "none")
+            .attr("fill", "steelblue")
             .attr("stroke", "black")
             .call(function(){var _that = me; me.redraw.call(_that);});
 
@@ -127,20 +152,22 @@ A Web based volume rendering transfer function editor
 
         g.append("g")
             .attr("class", "axis axis--y")
-            .attr("transform", "translate(0,0)")
+            .attr("transform", "translate(0, 0)")
             .call(d3.axisLeft(me.yScale));
       },
 
       // Update the chart content
       redraw: function() {
         var me = this;
-        var svg = d3.select(me.$$('svg')).select("g")
-        svg.select("path").attr("d", me.line);
+        var svg = d3.select(me.$$('svg')).select("g");
+        svg.select("path").attr("d", me.area);
 
         var circle = svg.selectAll("circle")
-            .data(me.controlPoints, function(d) { return d; });
+            .data(me.controlPoints)
 
         circle.enter().append("circle")
+            .attr("cx", function(d) { return me.xScale(d[0]); })
+            .attr("cy", function(d) { return me.yScale(d[1]); })
             .attr("r", 1e-6)
             .on("mousedown", function(d) { var _that = me; me.selected = me.dragged = d; me.redraw.call(_that); })
           .transition()
@@ -168,7 +195,17 @@ A Web based volume rendering transfer function editor
       /////// User interaction related event callbacks ////////
 
       mousedown: function(){
-        console.log("mousedown!!");
+        var me = this;
+        var pos = d3.mouse(me.svg.node());
+        pos = [
+          me.xScale.invert(pos[0] - me.margin.left),
+          me.yScale.invert(pos[1] - me.margin.top)
+        ];
+        me.selected = me.dragged = pos;
+        var bisect = d3.bisector(function(a, b) { return a[0] - b[0]; }).left;
+        var indexPos = bisect(me.controlPoints, pos);
+        me.controlPoints.splice(indexPos, 0, pos);
+        me.redraw.call(me);
       },
 
       /////// Polymer lifecycle callbacks /////////////
@@ -204,7 +241,7 @@ A Web based volume rendering transfer function editor
         },
         width: {
           type: Number,
-          value: 350,
+          value: 375,
         },
         height: {
           type: Number,
