@@ -33,7 +33,7 @@ A Web based volume rendering transfer function editor
 
       .line {
         fill: steelblue;
-        stroke: steelblue;
+        stroke: black;
         stroke-width: 1.5px;
       }
 
@@ -131,18 +131,23 @@ A Web based volume rendering transfer function editor
             .attr("height", function(d) { return me._height - me.binScale(d.length); });
 
         // Draw control points
-        g.append("rect")
-            .attr("width", me._width)
-            .attr("height", me._height)
-            .style("opacity", 0)
-            .on("mousedown", function(){var _that = me; me.mousedown.call(_that);});
-
         g.append("path")
             .datum(me.controlPoints)
             .attr("class", "line")
             .attr("fill", "steelblue")
+            .attr("opacity", 0.7)
             .attr("stroke", "black")
             .call(function(){var _that = me; me.redraw.call(_that);});
+
+        g.append("rect")
+            .attr("width", me._width)
+            .attr("height", me._height)
+            .style("opacity", 0)
+            .on("mousedown", function(){var _that = me; me.mousedown.call(_that);})
+            .on("mouseup", function(){var _that = me; me.mouseup.call(_that);})
+            .on("mousemove", function(){var _that = me; me.mousemove.call(_that);});
+
+        d3.select(me.$$('svg')).on("keydown", function(){var _that = me; me.keydown.call(_that);});
 
         // Draw axis
         g.append("g")
@@ -170,6 +175,7 @@ A Web based volume rendering transfer function editor
             .attr("cy", function(d) { return me.yScale(d[1]); })
             .attr("r", 1e-6)
             .on("mousedown", function(d) { var _that = me; me.selected = me.dragged = d; me.redraw.call(_that); })
+            .on("mouseup", function(){var _that = me; me.mouseup.call(_that);})
           .transition()
             .duration(750)
             //.ease("elastic")
@@ -206,6 +212,45 @@ A Web based volume rendering transfer function editor
         var indexPos = bisect(me.controlPoints, pos);
         me.controlPoints.splice(indexPos, 0, pos);
         me.redraw.call(me);
+      },
+
+      mousemove: function() {
+        if (!this.dragged) return;
+        var index = this.controlPoints.indexOf(this.selected);
+        var m = d3.mouse(this.svg.node());
+        this.dragged[0] = this.xScale.invert(Math.max(0, Math.min(this._width, m[0] - this.margin.left)));
+        this.dragged[1] = this.yScale.invert(Math.max(0, Math.min(this._height, m[1] - this.margin.top)));
+        var bisect = d3.bisector(function(a, b) { return a[0] - b[0]; }).left;
+        var bisect2 = d3.bisector(function(a, b) { return a[0] - b[0]; }).right;
+        var virtualIndex = bisect(this.controlPoints, this.dragged);
+        var virtualIndex2 = bisect2(this.controlPoints, this.dragged);
+        if (virtualIndex<index) {
+          this.controlPoints.splice(virtualIndex, 1);
+        }else if (virtualIndex>index) {
+          this.controlPoints.splice(index+1, 1);
+        }else if (virtualIndex2-index >= 2) {
+          this.controlPoints.splice(index+1, 1);
+        }
+        this.redraw.call(this);
+      },
+
+      mouseup: function() {
+        if (!this.dragged) return;
+        this.redraw.call(this);
+        this.dragged = null;
+      },
+
+      keydown: function(){
+        if (!this.selected) return;
+        switch (d3.event.keyCode) {
+          case 46: { // delete
+            var i = this.controlPoints.indexOf(this.selected);
+            this.controlPoints.splice(i, 1);
+            this.selected = this.controlPoints.length ?  this.controlPoints[i > 0 ? i - 1 : 0] : null;
+            this.redraw.call(this);
+            break;
+          }
+        }
       },
 
       /////// Polymer lifecycle callbacks /////////////
