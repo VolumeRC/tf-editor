@@ -21,27 +21,22 @@ A Web based volume rendering transfer function editor
         fill: steelblue;
       }
 
-      .bar text {
-        fill: #fff;
-        font: 10px sans-serif;
-      }
-
       rect {
         fill: none;
         pointer-events: all;
       }
 
       .line {
-        fill: steelblue;
+        /*fill: steelblue;*/
         stroke: black;
         stroke-width: 1.5px;
       }
 
       circle {
-        fill: #fff;
-        fill-opacity: .2;
+        /*fill: #fff;*/
+        fill-opacity: .6;
         cursor: move;
-        stroke: steelblue;
+        stroke: black;
         stroke-width: 1.5px;
       }
 
@@ -52,6 +47,7 @@ A Web based volume rendering transfer function editor
     </style>
     <div id="container">
       <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
+      <input type="color" id="picker-{{id}}"><canvas id="canvas-{{id}}" width="255" height="10"></canvas>
     </div>
   </template>
 
@@ -82,6 +78,7 @@ A Web based volume rendering transfer function editor
         // Keep track of control points interaction
         this.dragged = null,
         this.selected = null;
+        this.last_color = 'green';
       },
 
       initializeElements: function() {
@@ -98,14 +95,20 @@ A Web based volume rendering transfer function editor
         this.bins
           .domain(this.xScale.domain())
           .thresholds(this.xScale.ticks(this.nbins));
-        this.controlPoints.push([extent[0], 0]);
-        this.controlPoints.push([extent[1], 1]);
+        this.controlPoints.push({'x':extent[0], 'opacity':0, 'color': 'blue'});
+        this.controlPoints.push({'x':extent[1], 'opacity':1, 'color': 'red'});
         this.selected = this.controlPoints[0];
         this.area
-          .x(function(d) { return me.xScale(d[0]); })
-          .y0(function(d) { return me.yScale(d[1]); })
+          .x(function(d) { return me.xScale(d.x); })
+          .y0(function(d) { return me.yScale(d.opacity); })
           .y1(this._height)
           .curve(d3.curveLinear);
+        // Get the context of the canvas element
+        this.canvasContext = this.$$("canvas").getContext("2d");
+        // Access the color selector
+        this.$$("#picker-"+this.id).addEventListener("change", function(){
+            me.last_color = this.value;
+        });
       },
 
       // Perform the drawing
@@ -130,12 +133,22 @@ A Web based volume rendering transfer function editor
             .attr("width", this.xScale(bins[0].x1) - this.xScale(bins[0].x0) - 1)
             .attr("height", function(d) { return me._height - me.binScale(d.length); });
 
+        // Gradient definitions
+        g.append("defs").append("linearGradient")
+          .attr("id", "tfGradient-"+this.id)
+          //.attr("gradientUnits", "userSpaceOnUse")
+          .attr("gradientUnits", "objectBoundingBox")
+          .attr("spreadMethod", "pad")
+          .attr("x1", "0%").attr("y1", "0%")
+          .attr("x2", "100%").attr("y2", "0%");
+          //.attr("x1", me.xScale(0)).attr("y1", me.yScale(0))
+          //.attr("x2", me.xScale(255)).attr("y2", me.yScale(0));
+
         // Draw control points
         g.append("path")
             .datum(me.controlPoints)
             .attr("class", "line")
-            .attr("fill", "steelblue")
-            .attr("opacity", 0.7)
+            .attr("fill", "url(#tfGradient-"+this.id+")")
             .attr("stroke", "black")
             .call(function(){var _that = me; me.redraw.call(_that);});
 
@@ -153,12 +166,12 @@ A Web based volume rendering transfer function editor
         g.append("g")
             .attr("class", "axis axis--x")
             .attr("transform", "translate(0," + me._height + ")")
-            .call(d3.axisBottom(me.xScale));
+            .call(d3.axisBottom(me.xScale).ticks(4));
 
         g.append("g")
             .attr("class", "axis axis--y")
             .attr("transform", "translate(0, 0)")
-            .call(d3.axisLeft(me.yScale));
+            .call(d3.axisLeft(me.yScale).ticks(5));
       },
 
       // Update the chart content
@@ -167,30 +180,63 @@ A Web based volume rendering transfer function editor
         var svg = d3.select(me.$$('svg')).select("g");
         svg.select("path").attr("d", me.area);
 
+        // Add circle to connect and interact with the control points
         var circle = svg.selectAll("circle")
             .data(me.controlPoints)
 
         circle.enter().append("circle")
-            .attr("cx", function(d) { return me.xScale(d[0]); })
-            .attr("cy", function(d) { return me.yScale(d[1]); })
+            .attr("cx", function(d) { return me.xScale(d.x); })
+            .attr("cy", function(d) { return me.yScale(d.opacity); })
+            .style("fill", function(d) { return d.color; })
             .attr("r", 1e-6)
-            .on("mousedown", function(d) { var _that = me; me.selected = me.dragged = d; me.redraw.call(_that); })
+            .on("mousedown", function(d) {
+                var _that = me;
+                me.selected = me.dragged = d;
+                me.last_color = d.color;
+                me.redraw.call(_that);
+            })
             .on("mouseup", function(){var _that = me; me.mouseup.call(_that);})
+            .on("contextmenu", function (d, i) {
+                // react on right-clicking
+                d3.event.preventDefault();
+                d.color = me.$$("#picker-"+me.id).value;
+                me.redraw.call(me);
+            })
           .transition()
             .duration(750)
-            //.ease("elastic")
             .attr("r", 5.0);
 
         circle.classed("selected", function(d) { return d === me.selected; })
-            .attr("cx", function(d) { return me.xScale(d[0]); })
-            .attr("cy", function(d) { return me.yScale(d[1]); });
+            .style("fill", function(d) { return d.color; })
+            .attr("cx", function(d) { return me.xScale(d.x); })
+            .attr("cy", function(d) { return me.yScale(d.opacity); })
+            .raise();
 
         circle.exit().remove();
+
+        // Create a linear gradient definition of the control points
+        var gradient = svg.select("linearGradient").selectAll("stop").data(me.controlPoints);
+
+        gradient.enter().append("stop")
+            .attr("stop-color", function(d) {return d.color; })
+            .attr("stop-opacity", function(d) { return d.opacity; })
+            .attr("offset", function(d) { var l=(me.controlPoints[me.controlPoints.length-1].x - me.controlPoints[0].x);return ""+((d.x-me.controlPoints[0].x)/l*100)+"%"; });
+
+        gradient.attr("stop-color", function(d) {return d.color; })
+            .attr("stop-opacity", function(d) { return d.opacity; })
+            .attr("offset", function(d) { var l=(me.controlPoints[me.controlPoints.length-1].x - me.controlPoints[0].x);return ""+((d.x-me.controlPoints[0].x)/l*100)+"%"; });
+
+        gradient.exit().remove();
 
         if (d3.event) {
           d3.event.preventDefault();
           d3.event.stopPropagation();
         }
+
+        // Draw gradient in canvas too
+        setTimeout(function(){
+          me.drawCanvas(me);
+        }, 100);
       },
 
       // Refresh the control points
@@ -198,19 +244,36 @@ A Web based volume rendering transfer function editor
 
       },
 
+      // Draw thre tf gradient in the canvas container
+      drawCanvas: function(){
+        var ctx = this.canvasContext;
+        ctx.clearRect(0,0,255,10);
+        var x0 = this.controlPoints[0].x,
+          x2 = this.controlPoints[this.controlPoints.length-1].x;
+        var grd = ctx.createLinearGradient(x0,0,x2,0);
+        this.controlPoints.forEach(function(d){
+          var color = d3.color(d.color);
+          color.opacity = d.opacity;
+          grd.addColorStop(d.x/256, color.toString());
+        });
+        ctx.fillStyle=grd;
+        ctx.fillRect(x0,0,x2,10);
+      },
+
       /////// User interaction related event callbacks ////////
 
       mousedown: function(){
         var me = this;
         var pos = d3.mouse(me.svg.node());
-        pos = [
-          me.xScale.invert(pos[0] - me.margin.left),
-          me.yScale.invert(pos[1] - me.margin.top)
-        ];
-        me.selected = me.dragged = pos;
-        var bisect = d3.bisector(function(a, b) { return a[0] - b[0]; }).left;
-        var indexPos = bisect(me.controlPoints, pos);
-        me.controlPoints.splice(indexPos, 0, pos);
+        point = {
+          'x': me.xScale.invert(pos[0] - me.margin.left),
+          'opacity': me.yScale.invert(pos[1] - me.margin.top),
+          'color': me.last_color
+        };
+        me.selected = me.dragged = point;
+        var bisect = d3.bisector(function(a, b) { return a.x - b.x; }).left;
+        var indexPos = bisect(me.controlPoints, point);
+        me.controlPoints.splice(indexPos, 0, point);
         me.redraw.call(me);
       },
 
@@ -218,10 +281,10 @@ A Web based volume rendering transfer function editor
         if (!this.dragged) return;
         var index = this.controlPoints.indexOf(this.selected);
         var m = d3.mouse(this.svg.node());
-        this.dragged[0] = this.xScale.invert(Math.max(0, Math.min(this._width, m[0] - this.margin.left)));
-        this.dragged[1] = this.yScale.invert(Math.max(0, Math.min(this._height, m[1] - this.margin.top)));
-        var bisect = d3.bisector(function(a, b) { return a[0] - b[0]; }).left;
-        var bisect2 = d3.bisector(function(a, b) { return a[0] - b[0]; }).right;
+        this.dragged.x = this.xScale.invert(Math.max(0, Math.min(this._width, m[0] - this.margin.left)));
+        this.dragged.opacity = this.yScale.invert(Math.max(0, Math.min(this._height, m[1] - this.margin.top)));
+        var bisect = d3.bisector(function(a, b) { return a.x - b.x; }).left;
+        var bisect2 = d3.bisector(function(a, b) { return a.x - b.x; }).right;
         var virtualIndex = bisect(this.controlPoints, this.dragged);
         var virtualIndex2 = bisect2(this.controlPoints, this.dragged);
         if (virtualIndex<index) {
@@ -266,7 +329,7 @@ A Web based volume rendering transfer function editor
         // Access the svg dom element
         this.svg = d3.select(this.$$('svg'));
         this._width = +this.svg.attr("width") - this.margin.left - this.margin.right;
-        this._height = +this.svg.attr("height") - this.margin.top - this.margin.bottom;
+        this._height = +this.svg.attr("height") - this.margin.top - this.margin.bottom-15;
         // Create ramdom test data
         this._data = d3.range(1000).map(function(){return Math.random() * 255 | 0;});
         //this._data = d3.range(1000).map(d3.randomBates(10));
