@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>tf-editor demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+    <link rel="import" href="../tf-editor.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+    </style>
+  </head>
+  <body>
+
+    <div class="vertical-section-container centered">
+      <h3>TF-Editor default 2</h3>
+      <demo-snippet>
+        <template>
+          <tf-editor id="tf-demo1"></tf-editor>
+        </template>
+      </demo-snippet>
+      <h3>TF-Editor custom number of bins</h3>
+      <demo-snippet>
+        <template>
+          <tf-editor id="tf-demo2" nBins="25"></tf-editor>
+        </template>
+      </demo-snippet>
+    </div>
+
+  </body>
+</html>
