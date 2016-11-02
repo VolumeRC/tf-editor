@@ -80,7 +80,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                 this.yScale = d3.scaleLinear();
                 this.binScale = d3.scaleLinear();
 
-                // Interpolation line
+                // Area for the opacity map representation
                 this.area = d3.area();
 
                 // Create histogram object
@@ -88,6 +88,9 @@ The output canvas selector string will be reflected in the `output` attribute.
 
                 // Control points
                 this.controlPoints = [];
+
+                // Scale to fit the gradient in the canvas output
+                this.canvasScale = d3.scaleLinear();
 
                 // Keep track of control points interaction
                 this.dragged = null,
@@ -129,6 +132,8 @@ The output canvas selector string will be reflected in the `output` attribute.
                     })
                     .y1(this._height)
                     .curve(d3.curveLinear);
+
+                this.canvasScale.range([0, 1]);
                 // Get the context of the canvas element
                 this.canvasContext = this.$$("canvas").getContext("2d");
                 // Access the color selector
@@ -318,21 +323,35 @@ The output canvas selector string will be reflected in the `output` attribute.
             },
 
             /**
-            * Draw the TF output in the canvas container.
-            */
+             * Draw the TF output in the canvas container.
+             */
             _drawCanvas: function() {
+                //var me = this;
+                var extent = [d3.min(this.controlPoints, function(d) {
+                        return d.x;
+                    }),
+                    d3.max(this.controlPoints, function(d) {
+                        return d.x;
+                    })
+                ];
+                this.canvasScale.domain(extent);
+                // Convinient access
+                var x0 = extent[0],
+                    x1 = extent[1];
                 var ctx = this.canvasContext;
+                // Clear previous result
                 ctx.clearRect(0, 0, 255, 10);
-                var x0 = this.controlPoints[0].x,
-                    x2 = this.controlPoints[this.controlPoints.length - 1].x;
-                var grd = ctx.createLinearGradient(x0, 0, x2, 0);
-                this.controlPoints.forEach(function(d) {
-                    var color = d3.color(d.color);
-                    color.opacity = d.opacity;
-                    grd.addColorStop(d.x / 256, color.toString());
-                });
+                // Draw new result
+                var grd = ctx.createLinearGradient(x0, 0, x1, 0);
+                for (var i = 0; i < this.controlPoints.length; i++) {
+                  var d = this.controlPoints[i];
+                  var color = d3.color(d.color);
+                  color.opacity = d.opacity;
+                  //grd.addColorStop((d.x - x0) / Math.abs(x1 - x0), color.toString());
+                  grd.addColorStop(this.canvasScale(d.x), color.toString());
+                }
                 ctx.fillStyle = grd;
-                ctx.fillRect(x0, 0, x2, 10);
+                ctx.fillRect(x0, 0, x1-x0, 10);
             },
 
             /////// User interaction related event callbacks ////////
@@ -430,8 +449,7 @@ The output canvas selector string will be reflected in the `output` attribute.
              *
              * @param {Array} d
              */
-            setData: function(d) {
-            },
+            setData: function(d) {},
 
             /////// Polymer lifecycle callbacks /////////////
 
