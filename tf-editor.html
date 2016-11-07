@@ -14,9 +14,9 @@ page and then pass the volume data as a flatten array as an input.
     </body>
 
 The output canvas selector string will be reflected in the `output` attribute.
-
-@demo ./demo/index.html  Showcase of the different attribute arguments!
 @demo ./demo/demo1.html  Super cool demo, TF with volume rendering exanple!
+@demo ./demo/index.html  Showcase of the different attribute arguments!
+
 @demo ./demo/demo2.html  Even cooler demo. TF with DICOM and rescale example!
 -->
 <dom-module id="tf-editor">
@@ -56,7 +56,10 @@ The output canvas selector string will be reflected in the `output` attribute.
     </style>
     <div id="container">
       <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
-      <input type="color" id="picker-{{id}}"><canvas id="canvas-{{id}}" width="255" height="10"></canvas>
+      <input type="color" id="picker-{{id}}">
+      <template is="dom-if" if="{{_external}}">
+        <canvas id="canvas-{{id}}" width="255" height="10"></canvas>
+      </template>
     </div>
   </template>
 
@@ -111,7 +114,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                     .range([this._height, 0]);
                 this.bins
                     .domain(this.xScale.domain())
-                    .thresholds(this.xScale.ticks(this.nbins));
+                    .thresholds(this.xScale.ticks(this.numberBins));
                 this.controlPoints.push({
                     'x': extent[0],
                     'opacity': 0,
@@ -134,8 +137,17 @@ The output canvas selector string will be reflected in the `output` attribute.
                     .curve(d3.curveLinear);
 
                 this.canvasScale.range([0, 1]);
+
+                // Canvas element selector to output the result
+                this.canvasselector = this.canvasselector || "#canvas-"+this.id;
                 // Get the context of the canvas element
-                this.canvasContext = this.$$("canvas").getContext("2d");
+                this.canvasContext = function(){
+                  if (me._external == true) {
+                    return me.$$(me.canvasselector).getContext("2d");
+                  }else {
+                    return document.querySelector(me.canvasselector).getContext("2d");
+                  }
+                };
                 // Access the color selector
                 this.$$("#picker-" + this.id).addEventListener("change", function() {
                     me.last_color = this.value;
@@ -152,7 +164,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                 var bins = this.bins(this._data);
                 this.binScale.domain([0, d3.max(bins, function(d) {
                     return d.length;
-                })])
+                })]);
 
                 // Draw hitogram as a refence point
                 var bar = g.selectAll(".bar")
@@ -218,12 +230,12 @@ The output canvas selector string will be reflected in the `output` attribute.
                 g.append("g")
                     .attr("class", "axis axis--x")
                     .attr("transform", "translate(0," + me._height + ")")
-                    .call(d3.axisBottom(me.xScale).ticks(this.nticks));
+                    .call(d3.axisBottom(me.xScale).ticks(this.numberTicks));
 
                 g.append("g")
                     .attr("class", "axis axis--y")
                     .attr("transform", "translate(0, 0)")
-                    .call(d3.axisLeft(me.yScale).ticks(this.nticks));
+                    .call(d3.axisLeft(me.yScale).ticks(this.numberTicks));
             },
 
             // Update the chart content
@@ -327,18 +339,18 @@ The output canvas selector string will be reflected in the `output` attribute.
              */
             _drawCanvas: function() {
                 //var me = this;
-                var extent = [d3.min(this.controlPoints, function(d) {
-                        return d.x;
-                    }),
-                    d3.max(this.controlPoints, function(d) {
-                        return d.x;
-                    })
-                ];
+                // var extent = [d3.min(this.controlPoints, function(d) {
+                //         return d.x;
+                //     }),
+                //     d3.max(this.controlPoints, function(d) {
+                //         return d.x;
+                //     })
+                // ];
+                var extent = [this.controlPoints[0].x, this.controlPoints[this.controlPoints.length-1].x];
                 this.canvasScale.domain(extent);
                 // Convinient access
-                var x0 = extent[0],
-                    x1 = extent[1];
-                var ctx = this.canvasContext;
+                var x0 = extent[0], x1 = extent[1];
+                var ctx = this.canvasContext();
                 // Clear previous result
                 ctx.clearRect(0, 0, 255, 10);
                 // Draw new result
@@ -352,6 +364,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                 }
                 ctx.fillStyle = grd;
                 ctx.fillRect(x0, 0, x1-x0, 10);
+
+                if(ctx.canvas.parentNode._x3domNode != undefined){
+                  ctx.canvas.parentNode._x3domNode.invalidateGLObject();
+                }
             },
 
             /////// User interaction related event callbacks ////////
@@ -425,15 +441,15 @@ The output canvas selector string will be reflected in the `output` attribute.
              * @return {HTMLElement} canvas 2D with the TF output.
              */
             getCanvas: function() {
-                return this.$$("#canvas-" + this.id)
+                return this.$$(this.canvasselector);
             },
             /**
              * Get the output canvas `element` query selector.
              *
              * @return {CSSselector}
              */
-            getCanvasSelector: function() {
-                return "#canvas-" + this.id
+            getcanvasselector: function() {
+                return this.canvasselector;
             },
             /**
              * Set the output canvas `element`.
@@ -442,7 +458,7 @@ The output canvas selector string will be reflected in the `output` attribute.
              * @return {bool}
              */
             setCanvas: function(element) {
-                return false;
+                return this.canvasContext = element.getContext("2d");
             },
             /**
              * Set the output canvas `element`.
@@ -467,11 +483,15 @@ The output canvas selector string will be reflected in the `output` attribute.
                 this._height = +this.svg.attr("height") - this.margin.top - this.margin.bottom - 15;
                 // Create ramdom test data
                 this._data = d3.range(1000).map(function() {
-                    return Math.random() * 255 | 0;
+                    return Math.random() * 256 | 0;
                 });
                 //this._data = d3.range(1000).map(d3.randomBates(10));
                 this._initializeElements();
                 this._drawChart();
+            },
+
+            _isCanvasNeeded: function(canvasselector){
+              return canvasselector === '' || canvasselector === '#canvas-'+this.id;
             },
 
             // Define Polymer component properties
@@ -495,12 +515,13 @@ The output canvas selector string will be reflected in the `output` attribute.
                     value: 'TF-Editor',
                 },
                 /**
-                 * CSSselector to an ImageTextureAtlas node from the X3DOM Framework (Optional).
+                 * CSSselector to an ImageTexture node from the X3DOM Framework (Optional).
                  *
                  * @type {CSSselector}
                  */
-                x3domAtlasSelector: {
-                    type: String
+                x3domselector: {
+                    type: String,
+                    value: '',
                 },
                 /**
                  * Explicit selector to an existent canvas (Optional).
@@ -509,8 +530,17 @@ The output canvas selector string will be reflected in the `output` attribute.
                  *
                  * @type {CSSselector}
                  */
-                canvasSelector: {
-                    type: String
+                canvasselector: {
+                    type: String,
+                    value: '',
+                },
+                /**
+                 * Computed property
+                 * @type {Boolean}
+                 */
+                _external: {
+                  type: Boolean,
+                  computed: '_isCanvasNeeded(canvasselector)',
                 },
                 /**
                  * Explicit width fot the element (Optional).
@@ -535,7 +565,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                  *
                  * @type {Number}
                  */
-                nbins: {
+                numberBins: {
                     type: Number,
                     value: 100,
                 },
@@ -544,7 +574,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                  *
                  * @type {Number}
                  */
-                nticks: {
+                numberTicks: {
                     type: Number,
                     value: 4,
                 }
@@ -557,8 +587,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                 //     type: String,
                 //     value: "linear"
                 // }
-            },
-
+            }
         });
     </script>
 </dom-module>
