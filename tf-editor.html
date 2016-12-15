@@ -603,8 +603,15 @@ The output canvas selector string will be reflected in the `output` attribute.
                 //     type: String,
                 //     value: "linear"
                 // }
-                initConfig: {
-                    type: String
+                /**
+                * Initial control points.
+                *
+                * Initialize the transfer funtion with the given control points.
+                * @type {Object}
+                */
+                initconfig: {
+                    type: Object,
+                    value: undefined
                 }
             },
 
