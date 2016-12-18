@@ -638,9 +638,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                         console.log("Flatten the pixel array");
                         // NOTE: We only keep the R channel
                         for (var i = 0, n = imgData.data.length; i < n; i += 4) {
-                            if (imgData.data[i] != 0) {
-                                imageFlattenArray.push(imgData.data[i]);
-                            }
+                            imageFlattenArray.push(imgData.data[i]);
                         }
                         console.log("Set the new data");
                         ctx._data = imageFlattenArray;
