@@ -506,6 +506,13 @@ The output canvas selector string will be reflected in the `output` attribute.
                 this._drawChart();
             },
 
+            attached: function() {
+                //Check for init value in the selectors
+                if (this.x3domselector != '') {
+                    this._x3domselectorChanged(this.x3domselector, '');
+                }
+            },
+
             _isCanvasNeeded: function(canvasselector) {
                 return canvasselector === '' || canvasselector === '#canvas-' + this.id;
             },
@@ -619,7 +626,7 @@ The output canvas selector string will be reflected in the `output` attribute.
             },
 
             _x3domselectorChanged: function(newValue, oldValue) {
-                if (newValue != undefined && newValue != "") {
+                if (newValue != undefined && newValue != "" && newValue != oldValue) {
                     console.log("New Selector added!");
                     console.log("New value: " + newValue);
                     console.log("Old value: " + oldValue);
@@ -644,7 +651,35 @@ The output canvas selector string will be reflected in the `output` attribute.
                         ctx._data = imageFlattenArray;
                         ctx._redrawHistogram();
                     };
-                    imageObj.src = 'aorta4096.png';
+                    //Lookup for the volume data
+                    var x3dNode = document.querySelector(newValue);
+                    if (x3dNode != undefined && x3dNode.hasOwnProperty('_x3domNode')) {
+                        var volumeDataUrl = '';
+                        // If the provided selector refers to the OpacityMap
+                        if (x3dNode.localName === "opacitymapvolumestyle") {
+                            return;
+                        } else if (x3dNode.localName === "blendedvolumestyle") {
+                            return;
+                        } else if (x3dNode.localName === "volumedata" || x3dNode.localName === "segmentedvolumedata" || x3dNode.localName === "isosurfacevolumedata") {
+                            volumeDataUrl = x3dNode.querySelector("imagetextureatlas").getAttribute("url");
+                            var tfTextureNode = x3dNode.querySelector("imagetexture");
+                            if (tfTextureNode != undefined && tfTextureNode.getAttribute("url") != "") {
+                                console.log("WARN: An image texture with a loaded TF founded.");
+                            } else {
+                                if (tfTextureNode.children.length > 0) {
+                                    tfTextureNode.children[0].setAttribute("id", "tf-canvas-" + this.id);
+                                } else {
+                                    var canvas = createElement('canvas').setAttribute("id", "tf-canvas-" + this.id);
+                                    tfTextureNode.append(canvas);
+                                }
+                                this.canvasselector = "#tf-canvas-" + this.id;
+                            }
+                            // Lool-up for the opacity
+                        } else {
+                            return;
+                        }
+                        imageObj.src = volumeDataUrl;
+                    }
                 }
             },
 
