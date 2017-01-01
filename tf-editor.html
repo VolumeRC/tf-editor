@@ -14,7 +14,6 @@ page and then pass the volume data as a flatten array as an input.
     </body>
 
 The output canvas selector string will be reflected in the `output` attribute.
-@demo ./demo/demo1.html  Super cool demo, TF with volume rendering exanple!
 @demo ./demo/index.html  Showcase of the different attribute arguments!
 
 @demo ./demo/demo2.html  Even cooler demo. TF with DICOM and rescale example!
@@ -141,13 +140,13 @@ The output canvas selector string will be reflected in the `output` attribute.
                 this.canvasScale.range([0, 1]);
 
                 // Canvas element selector to output the result
-                this.canvasselector = this.canvasselector || "#canvas-" + this.id;
+                this.canvasSelector = this.canvasSelector || "#canvas-" + this.id;
                 // Get the context of the canvas element
                 this.canvasContext = function() {
                     if (me._external == true) {
-                        return me.$$(me.canvasselector).getContext("2d");
+                        return me.$$(me.canvasSelector).getContext("2d");
                     } else {
-                        return document.querySelector(me.canvasselector).getContext("2d");
+                        return document.querySelector(me.canvasSelector).getContext("2d");
                     }
                 };
                 // Access the color selector
@@ -459,15 +458,15 @@ The output canvas selector string will be reflected in the `output` attribute.
              * @return {HTMLElement} canvas 2D with the TF output.
              */
             getCanvas: function() {
-                return this.$$(this.canvasselector);
+                return this.$$(this.canvasSelector);
             },
             /**
              * Get the output canvas `element` query selector.
              *
              * @return {CSSselector}
              */
-            getcanvasselector: function() {
-                return this.canvasselector;
+            getCanvasSelector: function() {
+                return this.canvasSelector;
             },
             /**
              * Set the output canvas `element`.
@@ -508,13 +507,13 @@ The output canvas selector string will be reflected in the `output` attribute.
 
             attached: function() {
                 //Check for init value in the selectors
-                if (this.x3domselector != '') {
-                    this._x3domselectorChanged(this.x3domselector, '');
+                if (this.x3domSelector != '') {
+                    this._x3domSelectorChanged(this.x3domSelector, '');
                 }
             },
 
-            _isCanvasNeeded: function(canvasselector) {
-                return canvasselector === '' || canvasselector === '#canvas-' + this.id;
+            _isCanvasNeeded: function(canvasSelector) {
+                return canvasSelector === '' || canvasSelector === '#canvas-' + this.id;
             },
 
             // Define Polymer component properties
@@ -542,10 +541,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                  *
                  * @type {CSSselector}
                  */
-                x3domselector: {
+                x3domSelector: {
                     type: String,
                     value: '',
-                    observer: '_x3domselectorChanged',
+                    observer: '_x3domSelectorChanged',
                 },
                 /**
                  * Explicit selector to an existent canvas (Optional).
@@ -554,10 +553,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                  *
                  * @type {CSSselector}
                  */
-                canvasselector: {
+                canvasSelector: {
                     type: String,
                     value: '',
-                    observer: '_canvasselectorChanged',
+                    observer: '_canvasSelectorChanged',
                 },
                 /**
                  * Computed property
@@ -565,7 +564,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                  */
                 _external: {
                     type: Boolean,
-                    computed: '_isCanvasNeeded(canvasselector)',
+                    computed: '_isCanvasNeeded(canvasSelector)',
                 },
                 /**
                  * Explicit width fot the element (Optional).
@@ -625,7 +624,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                 }
             },
 
-            _x3domselectorChanged: function(newValue, oldValue) {
+            _x3domSelectorChanged: function(newValue, oldValue) {
                 if (newValue != undefined && newValue != "" && newValue != oldValue) {
                     console.log("New Selector added!");
                     console.log("New value: " + newValue);
@@ -656,34 +655,47 @@ The output canvas selector string will be reflected in the `output` attribute.
                     if (x3dNode != undefined && x3dNode.hasOwnProperty('_x3domNode')) {
                         var volumeDataUrl = '';
                         // If the provided selector refers to the OpacityMap
-                        if (x3dNode.localName === "opacitymapvolumestyle") {
-                            return;
-                        } else if (x3dNode.localName === "blendedvolumestyle") {
-                            return;
+                        if (x3dNode.localName === "opacitymapvolumestyle" || x3dNode.localName === "blendedvolumestyle") {
+                            var parentVolume = null;
+                            if (x3dNode.parentNode.localName == "composedvolumestyle") {
+                              parentVolume = x3dNode.parentNode.parentNode.querySelector("imagetexture")
+                            }else {
+                              parentVolume = x3dNode.parentNode.querySelector("imagetexture");
+                            }
+                            if (parentVolume != null) {
+                              volumeDataUrl = parentVolume.getAttribute("url");
+                            }
                         } else if (x3dNode.localName === "volumedata" || x3dNode.localName === "segmentedvolumedata" || x3dNode.localName === "isosurfacevolumedata") {
                             volumeDataUrl = x3dNode.querySelector("imagetextureatlas").getAttribute("url");
-                            var tfTextureNode = x3dNode.querySelector("imagetexture");
-                            if (tfTextureNode != undefined && tfTextureNode.getAttribute("url") != "") {
-                                console.log("WARN: An image texture with a loaded TF founded.");
-                            } else {
-                                if (tfTextureNode.children.length > 0) {
-                                    tfTextureNode.children[0].setAttribute("id", "tf-canvas-" + this.id);
-                                } else {
-                                    var canvas = createElement('canvas').setAttribute("id", "tf-canvas-" + this.id);
-                                    tfTextureNode.append(canvas);
-                                }
-                                this.canvasselector = "#tf-canvas-" + this.id;
-                            }
-                            // Lool-up for the opacity
+                        } else if (x3dNode.localName === "imagetextureatlas"){
+                            volumeDataUrl = x3dNode.getAttribute("url");
                         } else {
                             return;
+                        }
+                        // Look for the tranfer funtion texture declaration
+                        var tfTextureNode = x3dNode.querySelector("imagetexture");
+                        if (tfTextureNode != null && tfTextureNode.getAttribute("url") != "") {
+                            console.log("WARN: An image texture with a loaded TF founded.");
+                        } else if (tfTextureNode != null && tfTextureNode.getAttribute("containerField").toLowerCase() === "transferfunction"){
+                            if (tfTextureNode.children.length > 0) {
+                                tfTextureNode.children[0].setAttribute("id", "tf-canvas-" + this.id);
+                            } else {
+                                tfTextureNode.setAttribute("hideChildren", "true");
+                                var canvas = document.createElement('canvas');
+                                canvas.setAttribute("id", "tf-canvas-" + this.id);
+                                canvas.setAttribute("width", "255px");
+                                canvas.setAttribute("height", "1px");
+                                tfTextureNode.append(canvas);
+                                setTimeout(function(){x3dom.reload();}, 1000);
+                            }
+                            this.canvasSelector = "#tf-canvas-" + this.id;
                         }
                         imageObj.src = volumeDataUrl;
                     }
                 }
             },
 
-            _canvasselectorChanged: function(newValue, oldValue) {
+            _canvasSelectorChanged: function(newValue, oldValue) {
                 console.log("Check wheter the canvas is valid or not!");
             }
         });
