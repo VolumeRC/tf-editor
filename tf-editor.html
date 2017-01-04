@@ -101,7 +101,7 @@ The output canvas selector string will be reflected in the `output` attribute.
             },
 
             _initializeElements: function() {
-                var extent = d3.extent(this._data);
+                var extent = (this._data && this._data.length > 0) ? d3.extent(this._data) : [0, 255];
                 var me = this;
                 this.xScale
                     .rangeRound([0, this._width])
@@ -224,30 +224,30 @@ The output canvas selector string will be reflected in the `output` attribute.
             // update the chart data
             _redrawHistogram: function() {
                 var me = this;
-                var bins = this.bins(this._data);
-                this.binScale.domain([0, d3.max(bins, function(d) {
-                    return d.length;
-                })]);
-
                 this.svg.select("g").selectAll(".bar").remove();
-                var bar = this.svg.select("g").selectAll(".bar").data(bins);
-                var barEnter = bar.enter().append("g")
-                    .attr("class", "bar")
-                    .attr("transform", function(d) {
-                        return "translate(" + me.xScale(d.x0) + "," + me.binScale(d.length) + ")";
-                    });
+                if (this._data && this._data.length > 0) {
+                    var bins = this.bins(this._data);
+                    this.binScale.domain([0, d3.max(bins, function(d) {
+                        return d.length;
+                    })]);
+                    var bar = this.svg.select("g").selectAll(".bar").data(bins);
+                    var barEnter = bar.enter().append("g")
+                        .attr("class", "bar")
+                        .attr("transform", function(d) {
+                            return "translate(" + me.xScale(d.x0) + "," + me.binScale(d.length) + ")";
+                        });
 
-                barEnter.append("rect")
-                    .attr("x", 1)
-                    .attr("width", this.xScale(bins[0].x1) - this.xScale(bins[0].x0) - 1)
-                    .attr("height", function(d) {
-                        return me._height - me.binScale(d.length);
-                    });
+                    barEnter.append("rect")
+                        .attr("x", 1)
+                        .attr("width", this.xScale(bins[0].x1) - this.xScale(bins[0].x0) - 1)
+                        .attr("height", function(d) {
+                            return me._height - me.binScale(d.length);
+                        });
 
-                this.svg.select("g").selectAll(".bar").lower();
+                    this.svg.select("g").selectAll(".bar").lower();
 
-                bar.exit().remove();
-
+                    bar.exit().remove();
+                }
             },
 
             // Update the chart content
@@ -482,7 +482,10 @@ The output canvas selector string will be reflected in the `output` attribute.
              *
              * @param {Array} d
              */
-            setData: function(d) {},
+            setData: function(d) {
+                this._data = d;
+                this._redrawHistogram();
+            },
 
             /////// Polymer lifecycle callbacks /////////////
 
@@ -498,9 +501,6 @@ The output canvas selector string will be reflected in the `output` attribute.
                 this.svg = d3.select(this.$$('svg'));
                 this._width = +this.svg.attr("width") - this.margin.left - this.margin.right;
                 this._height = +this.svg.attr("height") - this.margin.top - this.margin.bottom - 15;
-                // Create ramdom test data
-                this._data = [0, 255];
-                //this._data = d3.range(1000).map(d3.randomBates(10));
                 this._initializeElements();
                 this._drawChart();
             },
@@ -658,16 +658,16 @@ The output canvas selector string will be reflected in the `output` attribute.
                         if (x3dNode.localName === "opacitymapvolumestyle" || x3dNode.localName === "blendedvolumestyle") {
                             var parentVolume = null;
                             if (x3dNode.parentNode.localName == "composedvolumestyle") {
-                              parentVolume = x3dNode.parentNode.parentNode.querySelector("imagetexture")
-                            }else {
-                              parentVolume = x3dNode.parentNode.querySelector("imagetexture");
+                                parentVolume = x3dNode.parentNode.parentNode.querySelector("imagetexture")
+                            } else {
+                                parentVolume = x3dNode.parentNode.querySelector("imagetexture");
                             }
                             if (parentVolume != null) {
-                              volumeDataUrl = parentVolume.getAttribute("url");
+                                volumeDataUrl = parentVolume.getAttribute("url");
                             }
                         } else if (x3dNode.localName === "volumedata" || x3dNode.localName === "segmentedvolumedata" || x3dNode.localName === "isosurfacevolumedata") {
                             volumeDataUrl = x3dNode.querySelector("imagetextureatlas").getAttribute("url");
-                        } else if (x3dNode.localName === "imagetextureatlas"){
+                        } else if (x3dNode.localName === "imagetextureatlas") {
                             volumeDataUrl = x3dNode.getAttribute("url");
                         } else {
                             return;
@@ -676,7 +676,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                         var tfTextureNode = x3dNode.querySelector("imagetexture");
                         if (tfTextureNode != null && tfTextureNode.getAttribute("url") != "") {
                             console.log("WARN: An image texture with a loaded TF founded.");
-                        } else if (tfTextureNode != null && tfTextureNode.getAttribute("containerField").toLowerCase() === "transferfunction"){
+                        } else if (tfTextureNode != null && tfTextureNode.getAttribute("containerField").toLowerCase() === "transferfunction") {
                             if (tfTextureNode.children.length > 0) {
                                 tfTextureNode.children[0].setAttribute("id", "tf-canvas-" + this.id);
                             } else {
@@ -686,7 +686,9 @@ The output canvas selector string will be reflected in the `output` attribute.
                                 canvas.setAttribute("width", "255px");
                                 canvas.setAttribute("height", "1px");
                                 tfTextureNode.append(canvas);
-                                setTimeout(function(){x3dom.reload();}, 1000);
+                                setTimeout(function() {
+                                    x3dom.reload();
+                                }, 1000);
                             }
                             this.canvasSelector = "#tf-canvas-" + this.id;
                         }
