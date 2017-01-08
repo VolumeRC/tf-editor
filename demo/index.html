@@ -12,8 +12,8 @@
     <link rel="import" href="../tf-editor.html">
 
     <!-- Load the X3DOM Framework -->
-    <link rel="stylesheet" type="text/css" href="http://x3dom.org/download/dev/x3dom.css" />
-    <script type="text/javascript" src="http://x3dom.org/download/dev/x3dom-full.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://x3dom.org/download/dev/x3dom.css" />
+    <script type="text/javascript" src="https://x3dom.org/download/dev/x3dom-full.js"></script>
 
     <style is="custom-style" include="demo-pages-shared-styles">
 
@@ -28,8 +28,9 @@
             <template>
           <tf-editor id="tf-demo1"></tf-editor>
           <script>
-              // Add random data
-              var randomData = d3.range(1000).map(d3.randomBates(10)).map(function(x) {return x*125});
+              // Add random data [0-255] range
+              var interval = Array.apply(null, Array(1000)).map(function (_, i) {return i;});
+              var randomData = interval.map(function(x) { return Math.random() * 256;});
               document.querySelector("#tf-demo1").setData(randomData);
           </script>
         </template>
@@ -39,8 +40,9 @@
             <template>
               <tf-editor id="tf-demo2" number-bins="25"></tf-editor>
               <script>
-                  // Add random data
-                  var randomData = d3.range(1000).map(d3.randomBates(10)).map(function(x) {return x*255});
+                  // Add random data [60-120] range
+                  var interval = Array.apply(null, Array(1000)).map(function (_, i) {return i;});
+                  var randomData = interval.map(function(x) { return Math.random() * (180-60) + 60;});
                   document.querySelector("#tf-demo2").setData(randomData);
               </script>
             </template>
@@ -125,7 +127,7 @@
             </X3D>
             <br>
             <script>x3dom.reload();</script>
-            <tf-editor id="tf-demo7" name="TF" x3dom-selector='#volume3'></tf-editor>
+            <tf-editor id="tf-demo7" name="TF" x3dom-selector='#volume3' number-bins="20"></tf-editor>
           </template>
         </demo-snippet>
     </div>
