@@ -101,7 +101,10 @@ The output canvas selector string will be reflected in the `output` attribute.
             },
 
             _initializeElements: function() {
-                var extent = (this._data && this._data.length > 0) ? d3.extent(this._data) : [0, 255];
+                var extent = [0, 255];
+                if (this.fitToData && this._data && this._data.length > 0) {
+                    extent = d3.extent(this._data);
+                }
                 var me = this;
                 this.xScale
                     .rangeRound([0, this._width])
@@ -218,7 +221,41 @@ The output canvas selector string will be reflected in the `output` attribute.
 
             // update scales with new data input
             _updateScales: function() {
+                if (this.fitToData) {
+                    var dataExtent = d3.extent(this._data);
+                    // First obtain the index of points to be maintain;
+                    var x0 = -1;
+                    var x1 = -1;
+                    // Override dirty checking
+                    var controlPoints = this.controlPoints;
+                    for (var i = controlPoints.length - 1; i >= 0; i--) {
+                        x1 = (controlPoints[i].x >= dataExtent[1]) ? i : x1;
+                        if (controlPoints[i].x <= dataExtent[0]) {
+                            x0 = i;
+                            break;
+                        }
+                    }
+                    // Delete control points out of range
+                    if (x1 != -1) {
+                        controlPoints[x1].x = dataExtent[1];
+                        controlPoints.splice(x1, controlPoints.length - x1 - 1);
+                    }
+                    if (x0 != -1) {
+                        controlPoints[x0].x = dataExtent[0];
+                        controlPoints.splice(0, x0);
+                    }
+                    this.controlPoints = [];
+                    this.controlPoints = controlPoints;
+                    this.xScale.domain(dataExtent);
+                } else {
+                    this.xScale.domain([0, 255]);
+                }
+            },
 
+            // update the axis with the new data input
+            _updateAxis: function() {
+                var svg = d3.select(this.$$('svg')).select("g");
+                svg.selectAll(".axis.axis--x").call(d3.axisBottom(this.xScale).ticks(this.numberTicks));
             },
 
             // update the chart data
@@ -352,14 +389,6 @@ The output canvas selector string will be reflected in the `output` attribute.
              * Draw the TF output in the canvas container.
              */
             _drawCanvas: function() {
-                //var me = this;
-                // var extent = [d3.min(this.controlPoints, function(d) {
-                //         return d.x;
-                //     }),
-                //     d3.max(this.controlPoints, function(d) {
-                //         return d.x;
-                //     })
-                // ];
                 if (this.controlPoints != undefined && this.controlPoints.length > 0) {
                     var extent = [this.controlPoints[0].x, this.controlPoints[this.controlPoints.length - 1].x];
                     this.canvasScale.domain(extent);
@@ -409,8 +438,14 @@ The output canvas selector string will be reflected in the `output` attribute.
 
             _mousemove: function() {
                 if (!this.dragged) return;
-                var index = this.controlPoints.indexOf(this.selected);
+
+                function equalPoint(a, index, array) {
+                    return a.x == this.x && a.opacity == this.opacity && a.color == this.color;
+                };
+                var index = this.controlPoints.findIndex(equalPoint, this.selected);
+                if (index == -1) return;
                 var m = d3.mouse(this.svg.node());
+                this.selected = this.dragged = this.controlPoints[index];
                 this.dragged.x = this.xScale.invert(Math.max(0, Math.min(this._width, m[0] - this.margin.left)));
                 this.dragged.opacity = this.yScale.invert(Math.max(0, Math.min(this._height, m[1] - this.margin.top)));
                 var bisect = d3.bisector(function(a, b) {
@@ -484,6 +519,9 @@ The output canvas selector string will be reflected in the `output` attribute.
              */
             setData: function(d) {
                 this._data = d;
+                this._updateScales();
+                this._updateAxis();
+                this._redraw();
                 this._redrawHistogram();
             },
 
@@ -603,6 +641,14 @@ The output canvas selector string will be reflected in the `output` attribute.
                     value: 4,
                 },
                 /**
+                 * The X axis range is delimited to the input data range.
+                 * If false, the range will be set by default: [0-255]
+                 */
+                fitToData: {
+                    type: Boolean,
+                    value: true,
+                },
+                /**
                  * TF control points.
                  *
                  * The control points that define the transfer function. User
@@ -647,8 +693,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                             imageFlattenArray.push(imgData.data[i]);
                         }
                         console.log("Set the new data");
-                        ctx._data = imageFlattenArray;
-                        ctx._redrawHistogram();
+                        ctx.setData(imageFlattenArray);
                     };
                     //Lookup for the volume data
                     var x3dNode = document.querySelector(newValue);
