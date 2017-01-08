@@ -1,5 +1,6 @@
 <html>
-  <head>
+
+<head>
     <title>tf-editor demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
@@ -11,36 +12,56 @@
     <link rel="import" href="../tf-editor.html">
 
     <!-- Load the X3DOM Framework -->
-    <link rel="stylesheet" type="text/css" href="http://x3dom.org/download/dev/x3dom.css" />
-    <script type="text/javascript" src="http://x3dom.org/download/dev/x3dom-full.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://x3dom.org/download/dev/x3dom.css" />
+    <script type="text/javascript" src="https://x3dom.org/download/dev/x3dom-full.js"></script>
 
     <style is="custom-style" include="demo-pages-shared-styles">
+
     </style>
-  </head>
-  <body>
+</head>
+
+<body>
 
     <div class="vertical-section-container centered">
-      <h3>TF-editor default values</h3>
-      <demo-snippet>
-        <template>
+        <h3>TF-editor default values</h3>
+        <demo-snippet>
+            <template>
           <tf-editor id="tf-demo1"></tf-editor>
+          <script>
+              // Add random data [0-255] range
+              var interval = Array.apply(null, Array(1000)).map(function (_, i) {return i;});
+              var randomData = interval.map(function(x) { return Math.random() * 256;});
+              document.querySelector("#tf-demo1").setData(randomData);
+          </script>
         </template>
-      </demo-snippet>
-      <h3>TF-editor custom number of bins</h3>
-      <demo-snippet>
-        <template>
-          <tf-editor id="tf-demo2" nBins="25"></tf-editor>
-        </template>
-      </demo-snippet>
-      <h3>TF-editor custom number of ticks</h3>
-      <demo-snippet>
-        <template>
-          <tf-editor id="tf-demo3" nticks="0"></tf-editor>
-        </template>
-      </demo-snippet>
-      <h3>X3DOM and TF-editor linked by canvas element</h3>
-      <demo-snippet>
-        <template>
+        </demo-snippet>
+        <h3>TF-editor custom number of bins</h3>
+        <demo-snippet>
+            <template>
+              <tf-editor id="tf-demo2" number-bins="25"></tf-editor>
+              <script>
+                  // Add random data [60-120] range
+                  var interval = Array.apply(null, Array(1000)).map(function (_, i) {return i;});
+                  var randomData = interval.map(function(x) { return Math.random() * (180-60) + 60;});
+                  document.querySelector("#tf-demo2").setData(randomData);
+              </script>
+            </template>
+        </demo-snippet>
+        <h3>TF-editor custom number of ticks</h3>
+        <demo-snippet>
+          <template>
+            <tf-editor id="tf-demo3" number-ticks="1"></tf-editor>
+          </template>
+        </demo-snippet>
+        <h3>TF-editor with pre-defined control points</h3>
+        <demo-snippet>
+          <template>
+            <tf-editor id="tf-demo4" control-points='[{"x":0,"opacity":0,"color":"yellow"},{"x":102.38636363636363,"opacity":0.5532258064516129,"color":"green"},{"x":255,"opacity":1,"color":"magenta"}]'></tf-editor>
+          </template>
+        </demo-snippet>
+        <h3>X3DOM and TF-editor linked by canvas element</h3>
+        <demo-snippet>
+            <template>
           <X3D xmlns='http://www.web3d.org/specifications/x3d-namespace' showStat='false' showLog='false' width='360px' height='300px'>
               <Scene>
                   <Background skyColor='1.0 1.0 1.0'></Background>
@@ -49,7 +70,7 @@
                       <VolumeData id='volume' dimensions='4.0 4.0 4.0'>
                           <ImageTextureAtlas containerField='voxels' url='aorta4096.png' numberOfSlices='96' slicesOverX='10' slicesOverY='10'></ImageTextureAtlas>
                           <OpacityMapVolumeStyle lightFactor='1.2' opacityFactor='15.0'>
-                              <ImageTexture containerField='transferFunction' hideChildren="false">
+                              <ImageTexture containerField='transferFunction' hideChildren="true">
                                 <canvas id="tf1" width="255px" height="5px"></canvas>
                               </ImageTexture>
                           </OpacityMapVolumeStyle>
@@ -59,12 +80,12 @@
           </X3D>
           <script>x3dom.reload();</script>
           <br>
-          <tf-editor id="tf-demo4" name="TF" canvas-selector='#tf1'></tf-editor>
+          <tf-editor id="tf-demo5" name="TF" canvas-selector='#tf1'></tf-editor>
         </template>
-      </demo-snippet>
-      <h3>X3DOM and TF-editor linked by x3dom node</h3>
-      <demo-snippet>
-        <template>
+        </demo-snippet>
+        <h3>X3DOM and TF-editor linked by x3dom node</h3>
+        <demo-snippet>
+            <template>
           <X3D xmlns='http://www.web3d.org/specifications/x3d-namespace' showStat='false' showLog='false' width='360px' height='300px'>
               <Scene>
                   <Background skyColor='1.0 1.0 1.0'></Background>
@@ -83,12 +104,12 @@
           </X3D>
           <script>x3dom.reload();</script>
           <br>
-          <tf-editor id="tf-demo5" name="TF" x3dom-selector='#volume2' control-points='[{"x":0,"opacity":0,"color":"blue"},{"x":102.38636363636363,"opacity":0.5532258064516129,"color":"green"},{"x":255,"opacity":1,"color":"red"}]'></tf-editor>
+          <tf-editor id="tf-demo6" name="TF" x3dom-selector='#volume2'></tf-editor>
         </template>
         </demo-snippet>
-        <h3>X3DOM and TF-editor linked by x3dom node (without canvas declaration)</h3>
+        <h3>X3DOM and TF-editor linked by x3dom node (without canvas texture declaration)</h3>
         <demo-snippet>
-          <template>
+            <template>
             <X3D xmlns='http://www.web3d.org/specifications/x3d-namespace' showStat='false' showLog='false' width='360px' height='300px'>
                 <Scene>
                     <Background skyColor='1.0 1.0 1.0'></Background>
@@ -106,9 +127,10 @@
             </X3D>
             <br>
             <script>x3dom.reload();</script>
-            <tf-editor id="tf-demo6" name="TF" x3dom-selector='#volume3'></tf-editor>
+            <tf-editor id="tf-demo7" name="TF" x3dom-selector='#volume3' number-bins="20"></tf-editor>
           </template>
-      </demo-snippet>
+        </demo-snippet>
     </div>
-  </body>
+</body>
+
 </html>
