@@ -88,9 +88,6 @@ The output canvas selector string will be reflected in the `output` attribute.
                 // Create histogram object
                 this.bins = d3.histogram();
 
-                // Control points
-                // this.controlPoints = [];
-
                 // Scale to fit the gradient in the canvas output
                 this.canvasScale = d3.scaleLinear();
 
@@ -672,13 +669,6 @@ The output canvas selector string will be reflected in the `output` attribute.
 
             _x3domSelectorChanged: function(newValue, oldValue) {
                 if (newValue != undefined && newValue != "" && newValue != oldValue) {
-                    console.log("New Selector added!");
-                    console.log("New value: " + newValue);
-                    console.log("Old value: " + oldValue);
-
-                    console.log("Lookup for the voxel data");
-
-                    console.log("Fechting the data");
                     var ctx = this;
                     var imageObj = new Image();
                     imageObj.onload = function() {
@@ -687,12 +677,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                         var context = canvas.getContext('2d');
                         context.drawImage(this, 0, 0);
                         var imgData = context.getImageData(0, 0, this.width, this.height);
-                        console.log("Flatten the pixel array");
-                        // NOTE: We only keep the R channel
+                        // NOTE: Flatten the pixel array, we only keep the R channel
                         for (var i = 0, n = imgData.data.length; i < n; i += 4) {
                             imageFlattenArray.push(imgData.data[i]);
                         }
-                        console.log("Set the new data");
                         ctx.setData(imageFlattenArray);
                     };
                     //Lookup for the volume data
@@ -703,22 +691,22 @@ The output canvas selector string will be reflected in the `output` attribute.
                         if (x3dNode.localName === "opacitymapvolumestyle" || x3dNode.localName === "blendedvolumestyle") {
                             var parentVolume = null;
                             if (x3dNode.parentNode.localName == "composedvolumestyle") {
-                                parentVolume = x3dNode.parentNode.parentNode.querySelector("imagetexture")
+                                parentVolume = x3dNode.parentNode.parentNode.querySelector("imagetexture[containerField='transferFunction' i]")
                             } else {
-                                parentVolume = x3dNode.parentNode.querySelector("imagetexture");
+                                parentVolume = x3dNode.parentNode.querySelector("imagetexture[containerField='transferFunction' i]");
                             }
                             if (parentVolume != null) {
                                 volumeDataUrl = parentVolume.getAttribute("url");
                             }
                         } else if (x3dNode.localName === "volumedata" || x3dNode.localName === "segmentedvolumedata" || x3dNode.localName === "isosurfacevolumedata") {
-                            volumeDataUrl = x3dNode.querySelector("imagetextureatlas").getAttribute("url");
-                        } else if (x3dNode.localName === "imagetextureatlas") {
+                            volumeDataUrl = x3dNode.querySelector("imagetextureatlas[containerField='voxels' i]").getAttribute("url");
+                        } else if (x3dNode.localName === "imagetextureatlas" && x3dNode.getAttribute("containerField").toLowerCase() === "voxels") {
                             volumeDataUrl = x3dNode.getAttribute("url");
                         } else {
                             return;
                         }
                         // Look for the tranfer funtion texture declaration
-                        var tfTextureNode = x3dNode.querySelector("imagetexture");
+                        var tfTextureNode = x3dNode.querySelector("imagetexture[containerField='transferFunction' i]");
                         if (tfTextureNode != null && tfTextureNode.getAttribute("url") != "") {
                             console.log("WARN: An image texture with a loaded TF founded.");
                         } else if (tfTextureNode != null && tfTextureNode.getAttribute("containerField").toLowerCase() === "transferfunction") {
@@ -743,7 +731,16 @@ The output canvas selector string will be reflected in the `output` attribute.
             },
 
             _canvasSelectorChanged: function(newValue, oldValue) {
-                console.log("Check wheter the canvas is valid or not!");
+                if (newValue != '') {
+                    var newElement = document.querySelector(newValue);
+                    if (newElement != null && newElement.localName === "canvas") {
+                        newElement.setAttribute("id", "tf-canvas-" + this.id);
+                        newElement.setAttribute("width", "255px");
+                        newElement.setAttribute("height", "5px");
+                    } else if (newElement != null && newElement.localName != "canvas") {
+                        this.canvasSelector = oldValue;
+                    }
+                }
             }
         });
     </script>
