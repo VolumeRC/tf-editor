@@ -55,10 +55,11 @@ The output canvas selector string will be reflected in the `output` attribute.
     </style>
     <div id="container">
       <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
-      <input type="color" id="picker-{{id}}">
-      <template is="dom-if" if="{{_external}}">
-        <canvas id="canvas-{{id}}" width="255" height="10"></canvas>
-      </template>
+        <input type="color" id="picker-{{id}}">
+        <button id="tf-export-{{id}}">Export</button>
+        <template is="dom-if" if="{{_external}}">
+          <canvas id="canvas-{{id}}" width="255" height="10"></canvas>
+        </template>
     </div>
     </template>
 
