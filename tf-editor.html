@@ -29,6 +29,36 @@ The output canvas selector string will be reflected in the `output` attribute.
         fill: steelblue;
       }
 
+      .aligned {
+        margin: 0 auto;
+        display: inline-flex;
+      }
+
+      button {
+        border: 1px solid;
+        padding: 1px 2px;
+        margin-right: 2px;
+        margin-left: 2px;
+        height: 23px;
+        cursor: pointer;
+        overflow: visible;
+      }
+
+      button::-moz-focus-inner {
+        border: none;
+        padding: 1px 2px;
+      }
+
+      input[type=color] {
+        border: 1px solid;
+        width: 44px;
+        height: 23px;
+        margin-left: 2px;
+        margin-right: 2px;
+        padding: 1px 2px;
+        cursor: pointer;
+      }
+
       rect {
         fill: none;
         pointer-events: all;
@@ -55,11 +85,13 @@ The output canvas selector string will be reflected in the `output` attribute.
     </style>
     <div id="container">
       <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
+      <div class="aligned">
         <input type="color" id="picker-{{id}}">
         <button id="export-{{id}}">Export</button>
         <template is="dom-if" if="{{_external}}">
           <canvas id="canvas-{{id}}" width="255" height="10"></canvas>
         </template>
+    </div>
     </div>
     </template>
 
