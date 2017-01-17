@@ -56,7 +56,7 @@ The output canvas selector string will be reflected in the `output` attribute.
     <div id="container">
       <svg id="svg-{{id}}" width$="{{width}}" height$="{{height}}"></svg>
         <input type="color" id="picker-{{id}}">
-        <button id="tf-export-{{id}}">Export</button>
+        <button id="export-{{id}}">Export</button>
         <template is="dom-if" if="{{_external}}">
           <canvas id="canvas-{{id}}" width="255" height="10"></canvas>
         </template>
@@ -153,6 +153,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                 // Access the color selector
                 this.$$("#picker-" + this.id).addEventListener("change", function() {
                     me.last_color = this.value;
+                });
+                // Export button listener
+                this.$$("#export-" + this.id).addEventListener("click", function() {
+                    me._export.call(me)
                 });
             },
 
@@ -481,6 +485,21 @@ The output canvas selector string will be reflected in the `output` attribute.
                             break;
                         }
                 }
+            },
+
+            _export: function() {
+                var jsonContent = JSON.stringify(this.controlPoints);
+                var a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display: none";
+                var blob = new Blob([jsonContent], {
+                    type: "octet/stream"
+                });
+                var url = window.URL.createObjectURL(blob);
+                a.href = url;
+                a.download = "transferFunction.json";
+                a.click();
+                window.URL.revokeObjectURL(url);
             },
 
             /////// Public API functions ///////
