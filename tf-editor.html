@@ -113,7 +113,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                 // Axis scales
                 this.xScale = d3.scaleLinear();
                 this.yScale = d3.scaleLinear();
-                this.binScale = d3.scaleLinear();
+                this.binScale = d3.scaleLog();
 
                 // Area for the opacity map representation
                 this.area = d3.area();
@@ -143,7 +143,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                     .domain([0, 1])
                     .range([this._height, 0]);
                 this.binScale
-                    .range([this._height, 0]);
+                    .domain([1, 10])
+                    .range([this._height, 0])
+                    .base(2)
+                    .clamp([0, this._height]);
                 this.bins
                     .domain(this.xScale.domain())
                     .thresholds(this.xScale.ticks(this.numberBins));
@@ -298,7 +301,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                 this.svg.select("g").selectAll(".bar").remove();
                 if (this._data && this._data.length > 0) {
                     var bins = this.bins(this._data);
-                    this.binScale.domain([0, d3.max(bins, function(d) {
+                    this.binScale.domain([0.1, d3.max(bins, function(d) {
                         return d.length;
                     })]);
                     var bar = this.svg.select("g").selectAll(".bar").data(bins);
