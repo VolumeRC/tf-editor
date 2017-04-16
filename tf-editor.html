@@ -122,6 +122,9 @@ The output canvas selector string will be reflected in the `output` attribute.
                 // Scale to fit the gradient in the canvas output
                 this.canvasScale = d3.scaleLinear();
 
+                // Scale data range to 8bit
+                this.dataScale = d3.scaleLinear();
+
                 // Keep track of control points interaction
                 this.dragged = null;
                 this.selected = null;
@@ -172,6 +175,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                     .curve(d3.curveLinear);
 
                 this.canvasScale.range([0, 1]);
+                this.dataScale.domain(extent).range([0, 255]);
 
                 // Canvas element selector to output the result
                 this.canvasSelector = this.canvasSelector || "#canvas-" + this.id;
@@ -282,8 +286,10 @@ The output canvas selector string will be reflected in the `output` attribute.
                     this.controlPoints = [];
                     this.controlPoints = controlPoints;
                     this.xScale.domain(dataExtent);
+                    this.dataScale.domain(dataExtent);
                 } else {
                     this.xScale.domain([0, 255]);
+                    this.dataScale.domain([0, 255]);
                 }
             },
 
@@ -426,10 +432,10 @@ The output canvas selector string will be reflected in the `output` attribute.
             _drawCanvas: function() {
                 if (this.controlPoints != undefined && this.controlPoints.length > 0) {
                     var extent = [this.controlPoints[0].x, this.controlPoints[this.controlPoints.length - 1].x];
-                    this.canvasScale.domain(extent);
                     // Convinient access
-                    var x0 = extent[0],
-                        x1 = extent[1];
+                    var x0 = this.dataScale(extent[0]),
+                        x1 = this.dataScale(extent[1]);
+                    this.canvasScale.domain([x0, x1]);
                     var ctx = this.canvasContext();
                     // Clear previous result
                     ctx.clearRect(0, 0, 255, 10);
@@ -441,7 +447,7 @@ The output canvas selector string will be reflected in the `output` attribute.
                         var color = d3.color(d.color);
                         color.opacity = d.opacity;
                         //grd.addColorStop((d.x - x0) / Math.abs(x1 - x0), color.toString());
-                        grd.addColorStop(this.canvasScale(d.x), color.toString());
+                        grd.addColorStop(this.canvasScale(this.dataScale(d.x)), color.toString());
                     }
                     ctx.fillStyle = grd;
                     ctx.fillRect(x0, 0, x1 - x0, 10);
