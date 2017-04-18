@@ -1,0 +1,136 @@
+<html>
+
+<head>
+    <title>tf-editor demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+    <link rel="import" href="../tf-editor.html">
+
+    <!-- Load the X3DOM Framework -->
+    <link rel="stylesheet" type="text/css" href="https://x3dom.org/download/dev/x3dom.css" />
+    <script type="text/javascript" src="https://x3dom.org/download/dev/x3dom-full.js"></script>
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+    </style>
+</head>
+
+<body>
+
+    <div class="vertical-section-container centered">
+        <h3>TF-editor default values</h3>
+        <demo-snippet>
+            <template>
+          <tf-editor id="tf-demo1"></tf-editor>
+          <script>
+              // Add random data [0-255] range
+              var interval = Array.apply(null, Array(1000)).map(function (_, i) {return i;});
+              var randomData = interval.map(function(x) { return Math.random() * 256;});
+              document.querySelector("#tf-demo1").setData(randomData);
+          </script>
+        </template>
+        </demo-snippet>
+        <h3>TF-editor custom number of bins</h3>
+        <demo-snippet>
+            <template>
+              <tf-editor id="tf-demo2" number-bins="25"></tf-editor>
+              <script>
+                  // Add random data [60-120] range
+                  var interval = Array.apply(null, Array(1000)).map(function (_, i) {return i;});
+                  var randomData = interval.map(function(x) { return Math.random() * (180-60) + 60;});
+                  document.querySelector("#tf-demo2").setData(randomData);
+              </script>
+            </template>
+        </demo-snippet>
+        <h3>TF-editor custom number of ticks</h3>
+        <demo-snippet>
+          <template>
+            <tf-editor id="tf-demo3" number-ticks="1"></tf-editor>
+          </template>
+        </demo-snippet>
+        <h3>TF-editor with pre-defined control points</h3>
+        <demo-snippet>
+          <template>
+            <!-- NOTE: The control-points parameter value is shown escaped but the string should be unscaped: &quot; == " -->
+            <tf-editor id="tf-demo4" control-points='[{"x":0,"opacity":0,"color":"yellow"},{"x":102.38636363636363,"opacity":0.5532258064516129,"color":"green"},{"x":255,"opacity":1,"color":"magenta"}]'></tf-editor>
+          </template>
+        </demo-snippet>
+        <h3>X3DOM and TF-editor linked by canvas element</h3>
+        <demo-snippet>
+            <template>
+          <X3D xmlns='http://www.web3d.org/specifications/x3d-namespace' showStat='false' showLog='false' width='360px' height='300px'>
+              <Scene>
+                  <Background skyColor='1.0 1.0 1.0'></Background>
+                  <Viewpoint description='Default' zNear='0.0001' zFar='100'></Viewpoint>
+                  <Transform>
+                      <VolumeData id='volume' dimensions='4.0 4.0 4.0'>
+                          <ImageTextureAtlas containerField='voxels' url='aorta4096.png' numberOfSlices='96' slicesOverX='10' slicesOverY='10'></ImageTextureAtlas>
+                          <OpacityMapVolumeStyle lightFactor='1.2' opacityFactor='15.0'>
+                              <ImageTexture containerField='transferFunction' hideChildren="true">
+                                <canvas id="tf1" width="255px" height="5px"></canvas>
+                              </ImageTexture>
+                          </OpacityMapVolumeStyle>
+                      </VolumeData>
+                  </Transform>
+              </Scene>
+          </X3D>
+          <script>x3dom.reload();</script>
+          <br>
+          <tf-editor id="tf-demo5" name="TF" canvas-selector='#tf1'></tf-editor>
+        </template>
+        </demo-snippet>
+        <h3>X3DOM and TF-editor linked by x3dom node</h3>
+        <demo-snippet>
+            <template>
+          <X3D xmlns='http://www.web3d.org/specifications/x3d-namespace' showStat='false' showLog='false' width='360px' height='300px'>
+              <Scene>
+                  <Background skyColor='1.0 1.0 1.0'></Background>
+                  <Viewpoint description='Default' zNear='0.0001' zFar='100'></Viewpoint>
+                  <Transform>
+                      <VolumeData id='volume2' dimensions='4.0 4.0 4.0'>
+                          <ImageTextureAtlas containerField='voxels' url='aorta4096.png' numberOfSlices='96' slicesOverX='10' slicesOverY='10'></ImageTextureAtlas>
+                          <OpacityMapVolumeStyle lightFactor='1.2' opacityFactor='15.0'>
+                              <ImageTexture containerField='transferFunction'>
+                                  <canvas width="255px" height="5px"></canvas>
+                              </ImageTexture>
+                          </OpacityMapVolumeStyle>
+                      </VolumeData>
+                  </Transform>
+              </Scene>
+          </X3D>
+          <script>x3dom.reload();</script>
+          <br>
+          <tf-editor id="tf-demo6" name="TF" x3dom-selector='#volume2'></tf-editor>
+        </template>
+        </demo-snippet>
+        <h3>X3DOM and TF-editor linked by x3dom node (without canvas texture declaration)</h3>
+        <demo-snippet>
+            <template>
+            <X3D xmlns='http://www.web3d.org/specifications/x3d-namespace' showStat='false' showLog='false' width='360px' height='300px'>
+                <Scene>
+                    <Background skyColor='1.0 1.0 1.0'></Background>
+                    <Viewpoint description='Default' zNear='0.0001' zFar='100'></Viewpoint>
+                    <Transform>
+                        <VolumeData id='volume3' dimensions='4.0 4.0 4.0'>
+                            <ImageTextureAtlas containerField='voxels' url='aorta4096.png' numberOfSlices='96' slicesOverX='10' slicesOverY='10'></ImageTextureAtlas>
+                            <OpacityMapVolumeStyle lightFactor='1.2' opacityFactor='15.0'>
+                                <ImageTexture containerField='transferFunction'>
+                                </ImageTexture>
+                            </OpacityMapVolumeStyle>
+                        </VolumeData>
+                    </Transform>
+                </Scene>
+            </X3D>
+            <br>
+            <script>x3dom.reload();</script>
+            <tf-editor id="tf-demo7" name="TF" x3dom-selector='#volume3' number-bins="20"></tf-editor>
+          </template>
+        </demo-snippet>
+    </div>
+</body>
+
+</html>
