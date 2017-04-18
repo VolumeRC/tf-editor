@@ -16,7 +16,6 @@
     <script type="text/javascript" src="https://x3dom.org/download/dev/x3dom-full.js"></script>
 
     <style is="custom-style" include="demo-pages-shared-styles">
-
     </style>
 </head>
 
@@ -56,6 +55,7 @@
         <h3>TF-editor with pre-defined control points</h3>
         <demo-snippet>
           <template>
+            <!-- NOTE: The control-points parameter value is shown escaped but the string should be unscaped: &quot; == " -->
             <tf-editor id="tf-demo4" control-points='[{"x":0,"opacity":0,"color":"yellow"},{"x":102.38636363636363,"opacity":0.5532258064516129,"color":"green"},{"x":255,"opacity":1,"color":"magenta"}]'></tf-editor>
           </template>
         </demo-snippet>

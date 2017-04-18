@@ -1,19 +1,31 @@
+<!--
+@license
+Copyright (c) 2016 Vicomtech-IK4. All rights reserved.
+This code may only be used under the Apache License 2.0 found at http://volumerc.github.io/tf-editor/LICENSE.txt
+The complete set of attributions may be found at http://volumerc.github.io/tf-editor/NOTICE
+-->
+
 <!-- Manage external imports -->
 <link rel="import" href="../polymer/polymer.html">
-<script type="text/javascript" src="../d3/d3.min.js"></script>
+<!--<script type="text/javascript" src="../d3/d3.min.js"></script>-->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.8.0/d3.min.js"></script>
 
 <!--
 `<tf-editor>`
-A Web based volume rendering transfer function editor
+A Web based transfer function editor for volume rendering.
 
 Typical use, just insert `<tf-editor>` along a volume rendering scene into your
-page and then pass the volume data as a flatten array as an input.
+page. Optionally, pass the volume data as a flatten array to show an histogram
+and fit the control points to the data.
 
     <body>
       <tf-editor id="TF"></tf-editor>
     </body>
 
-The output canvas selector string will be reflected in the `output` attribute.
+The output canvas selector string will be reflected in the `output` attribute,
+if no input selector is provided.
+Check out the demo page for examples of the different use cases in action.
+
 @demo ./demo/index.html  Showcase of the different attribute arguments!
 -->
 <dom-module id="tf-editor">
