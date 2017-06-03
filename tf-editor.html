@@ -303,6 +303,8 @@ Check out the demo page for examples of the different use cases in action.
                     this.xScale.domain([0, 255]);
                     this.dataScale.domain([0, 255]);
                 }
+                this.bins.domain(this.xScale.domain())
+                  .thresholds(this.xScale.ticks(this.numberBins));
             },
 
             // update the axis with the new data input
@@ -329,7 +331,9 @@ Check out the demo page for examples of the different use cases in action.
 
                     barEnter.append("rect")
                         .attr("x", 1)
-                        .attr("width", this.xScale(bins[0].x1) - this.xScale(bins[0].x0) - 1)
+                        .attr("width", function(d) {
+                          return d.x1 - d.x0;
+                        })
                         .attr("height", function(d) {
                             return me._height - me.binScale(d.length);
                         });
