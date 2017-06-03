@@ -798,6 +798,8 @@ Check out the demo page for examples of the different use cases in action.
                         }
                         imageObj.src = volumeDataUrl;
                     }
+                    // Redraw the TF in the new canvas element
+                    this._drawCanvas();
                 }
             },
 
@@ -811,6 +813,8 @@ Check out the demo page for examples of the different use cases in action.
                     } else if (newElement != null && newElement.localName != "canvas") {
                         this.canvasSelector = oldValue;
                     }
+                    // Redraw the TF in the new canvas element
+                    this._drawCanvas();
                 }
             }
         });
