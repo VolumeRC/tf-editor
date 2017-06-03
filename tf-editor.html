@@ -191,14 +191,7 @@ Check out the demo page for examples of the different use cases in action.
 
                 // Canvas element selector to output the result
                 this.canvasSelector = this.canvasSelector || "#canvas-" + this.id;
-                // Get the context of the canvas element
-                this.canvasContext = function() {
-                    if (me._external == true) {
-                        return me.$$(me.canvasSelector).getContext("2d");
-                    } else {
-                        return document.querySelector(me.canvasSelector).getContext("2d");
-                    }
-                };
+
                 // Access the color selector
                 this.$$("#picker-" + this.id).addEventListener("change", function() {
                     me.last_color = this.value;
@@ -207,6 +200,13 @@ Check out the demo page for examples of the different use cases in action.
                 this.$$("#export-" + this.id).addEventListener("click", function() {
                     me._export.call(me)
                 });
+            },
+
+            // Get the 2D canvas context where the TF will be drawn
+            _canvasContext: function() {
+                let canvas_element = (this._external) ? this.$$(this.canvasSelector) : document.querySelector(this.canvasSelector);
+                if (canvas_element != null) return canvas_element.getContext("2d");
+                return canvas_element;
             },
 
             // Perform the drawing
@@ -448,7 +448,8 @@ Check out the demo page for examples of the different use cases in action.
                     var x0 = this.dataScale(extent[0]),
                         x1 = this.dataScale(extent[1]);
                     this.canvasScale.domain([x0, x1]);
-                    var ctx = this.canvasContext();
+                    var ctx = this._canvasContext();
+                    if (ctx == null) return;
                     // Clear previous result
                     ctx.clearRect(0, 0, 255, 10);
                     // Draw new result
@@ -571,15 +572,17 @@ Check out the demo page for examples of the different use cases in action.
             getCanvasSelector: function() {
                 return this.canvasSelector;
             },
+
             /**
-             * Set the output canvas `element`.
+             * TODO: Set the output canvas `element`.
              *
              * @param {HTMLElement} element canvas 2D.
              * @return {bool}
              */
             setCanvas: function(element) {
-                return this.canvasContext = element.getContext("2d");
+                //return this._canvasContext = element.getContext("2d");
             },
+
             /**
              * Set the output canvas `element`.
              *
