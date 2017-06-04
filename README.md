@@ -2,7 +2,10 @@
 
 A Web based transfer function editor component for volume rendering.
 
-This is a reusable component to easily add a transfer function editor to a web page/app and connect it to a volume visualization through a canvas element. It has built-in support to link the editor with a [x3dom](https;//www.x3dom.org) volume rendering scene.
+This is a reusable component to easily add a transfer function editor to a web
+page/app and connect it to a volume visualization through a canvas element. It
+has built-in support to link the editor with a [x3dom](https://www.x3dom.org)
+volume rendering scene.
 
 ## Install
 ```
