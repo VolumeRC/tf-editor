@@ -781,6 +781,7 @@ Check out the demo page for examples of the different use cases in action.
                         } else if (x3dNode.localName === "imagetextureatlas" && x3dNode.getAttribute("containerField").toLowerCase() === "voxels") {
                             volumeDataUrl = x3dNode.getAttribute("url");
                         } else {
+                            // No volume data node found
                             return;
                         }
                         // Look for the tranfer funtion texture declaration
@@ -803,8 +804,37 @@ Check out the demo page for examples of the different use cases in action.
                             }
                             this.canvasSelector = "#tf-canvas-" + this.id;
                         }
-                        imageObj.src = volumeDataUrl;
+
+                        if (volumeDataUrl = ""){
+                          let canvasDataElement = null;
+                          // If the volumeDataUrl is empty, check if the volume data is provided as a canvas element
+                          if (x3dNode.localName === "imagetextureatlas") {
+                            if (x3dNode.children.length > 0){
+                              canvasDataElement = x3dNode.children[0];
+                            }
+                          }else {
+                            let tmp_node = x3dNode.querySelector("imagetextureatlas[containerField='voxels' i]");
+                            if (tmp_node != null && tmp_node.children.length > 0) {
+                              canvasDataElement = tmp_node.children[0];
+                            }
+                          }
+                          //Get image data from canvas
+                          if (canvasDataElement != null){
+                            let imageFlattenArray = [];
+                            var context = canvasDataElement.getContext('2d');
+                            var imgData = context.getImageData(0, 0, canvasDataElement.width, canvasDataElement.height);
+                            // NOTE: Flatten the pixel array, we only keep the R channel
+                            for (var i = 0, n = imgData.data.length; i < n; i += 4) {
+                                imageFlattenArray.push(imgData.data[i]);
+                            }
+                            this.setData(imageFlattenArray);
+                          }
+                        }else{
+                          // The volume data is provided as an image, get it from browser's cache
+                          imageObj.src = volumeDataUrl;
+                        }
                     }
+
                     // Redraw the TF in the new canvas element
                     this._drawCanvas();
                 }
