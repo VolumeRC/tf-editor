@@ -262,15 +262,17 @@ Check out the demo page for examples of the different use cases in action.
                 // });
 
                 // Draw axis
+                var xTicks = me.xScale.ticks(me.numberTicks);
+                xTicks[xTicks.length-1] = me.xScale.domain()[1];
                 g.append("g")
                     .attr("class", "axis axis--x")
                     .attr("transform", "translate(0," + me._height + ")")
-                    .call(d3.axisBottom(me.xScale).ticks(this.numberTicks));
+                    .call(d3.axisBottom(me.xScale).tickValues(xTicks));
 
                 g.append("g")
                     .attr("class", "axis axis--y")
                     .attr("transform", "translate(0, 0)")
-                    .call(d3.axisLeft(me.yScale).ticks(this.numberTicks));
+                    .call(d3.axisLeft(me.yScale).ticks(me.numberTicks));
             },
 
             // update scales with new data input
@@ -312,8 +314,10 @@ Check out the demo page for examples of the different use cases in action.
 
             // update the axis with the new data input
             _updateAxis: function() {
-                var svg = d3.select(this.$$('svg')).select("g");
-                svg.selectAll(".axis.axis--x").call(d3.axisBottom(this.xScale).ticks(this.numberTicks));
+                let svg = d3.select(this.$$('svg')).select("g");
+                var xTicks = this.xScale.ticks(this.numberTicks);
+                xTicks[xTicks.length-1] = this.xScale.domain()[1];
+                svg.selectAll(".axis.axis--x").call(d3.axisBottom(this.xScale).tickValues(xTicks));
             },
 
             // update the chart data
