@@ -239,9 +239,12 @@ Check out the demo page for examples of the different use cases in action.
                         me._redraw();
                     });
 
+                // Mouse interaction handler
                 g.append("rect")
-                    .attr("width", me._width)
-                    .attr("height", me._height)
+                    .attr("y", -10)
+                    .attr("x", -10)
+                    .attr("width", me._width + 20)
+                    .attr("height", me._height + 20)
                     .style("opacity", 0)
                     .on("mousedown", function() {
                         me._mousedown();
@@ -481,8 +484,8 @@ Check out the demo page for examples of the different use cases in action.
                 var me = this;
                 var pos = d3.mouse(me.svg.node());
                 point = {
-                    "x": me.xScale.invert(pos[0] - me.margin.left),
-                    "opacity": me.yScale.invert(pos[1] - me.margin.top),
+                    "x": me.xScale.invert(Math.max(0, Math.min(pos[0] - me.margin.left, me._width))),
+                    "opacity": me.yScale.invert(Math.max(0, Math.min(pos[1] - me.margin.top, me._height))),
                     "color": me.last_color
                 };
                 me.selected = me.dragged = point;
