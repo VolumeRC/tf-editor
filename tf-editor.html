@@ -437,7 +437,7 @@ Check out the demo page for examples of the different use cases in action.
                 this.controlPoints = controlPoints;
 
                 // Draw gradient in canvas too
-                setTimeout(function() {
+                d3.timeout(function() {
                     me._drawCanvas();
                 }, 100);
             },
@@ -764,7 +764,7 @@ Check out the demo page for examples of the different use cases in action.
                     //Lookup for the volume data
                     var x3dNode = document.querySelector(newValue);
                     if (x3dNode != undefined && x3dNode.hasOwnProperty('_x3domNode')) {
-                        var volumeDataUrl = '';
+                        var volumeDataUrl = "";
                         // If the provided selector refers to the OpacityMap
                         if (x3dNode.localName === "opacitymapvolumestyle" || x3dNode.localName === "blendedvolumestyle") {
                             var parentVolume = null;
@@ -805,7 +805,7 @@ Check out the demo page for examples of the different use cases in action.
                             this.canvasSelector = "#tf-canvas-" + this.id;
                         }
 
-                        if (volumeDataUrl = ""){
+                        if (volumeDataUrl == ""){
                           let canvasDataElement = null;
                           // If the volumeDataUrl is empty, check if the volume data is provided as a canvas element
                           if (x3dNode.localName === "imagetextureatlas") {
