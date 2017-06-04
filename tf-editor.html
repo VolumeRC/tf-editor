@@ -827,13 +827,18 @@ Check out the demo page for examples of the different use cases in action.
                           }
                           //Get image data from canvas
                           if (canvasDataElement != null){
-                            let imageFlattenArray = [];
+                            var imageFlattenArray = [];
                             var context = canvasDataElement.getContext('2d');
                             var imgData = context.getImageData(0, 0, canvasDataElement.width, canvasDataElement.height);
+                            var dVal;
+                            var maxVal = -Number.MAX_VALUE;
                             // NOTE: Flatten the pixel array, we only keep the R channel
                             for (var i = 0, n = imgData.data.length; i < n; i += 4) {
-                                imageFlattenArray.push(imgData.data[i]);
+                                dVal = imgData.data[i];
+                                maxVal = Math.max(dVal, maxVal);
+                                imageFlattenArray.push(dVal);
                             }
+                            if (maxVal == 0) return;
                             this.setData(imageFlattenArray);
                           }
                         }else{
