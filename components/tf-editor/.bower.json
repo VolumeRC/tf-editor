@@ -1,0 +1,32 @@
+{
+  "name": "tf-editor",
+  "description": "Web based volume rendering transfer function editor component",
+  "main": "tf-editor.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.9.0",
+    "d3": "^4.2.8"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.8",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5",
+    "web-component-tester": "^4.3.6",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.24"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "transfer function",
+    "volume rendering",
+    "x3dom"
+  ],
+  "homepage": "https://github.com/VolumeRC/tf-editor",
+  "_release": "c2d2f8351e",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "c2d2f8351efe30c6e8d8ce0f0b0142fd89ee2d12"
+  },
+  "_source": "https://github.com/VolumeRC/tf-editor.git",
+  "_target": "master",
+  "_originalSource": "VolumeRC/tf-editor",
+  "_direct": true
+}

@@ -1,0 +1,21 @@
+{
+  "name": "tf-editor",
+  "description": "Web based volume rendering transfer function editor component",
+  "main": "tf-editor.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.9.0",
+    "d3": "^4.2.8"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.8",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5",
+    "web-component-tester": "^4.3.6",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.24"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "transfer function",
+    "volume rendering",
+    "x3dom"
+  ]
+}
