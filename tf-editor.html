@@ -479,6 +479,7 @@ Check out the demo page for examples of the different use cases in action.
                     if (ctx.canvas.parentNode._x3domNode != undefined) {
                         ctx.canvas.parentNode._x3domNode.invalidateGLObject();
                     }
+                    this.fire('updated-tf', "");
                 }
             },
 
@@ -750,6 +751,14 @@ Check out the demo page for examples of the different use cases in action.
                     reflectToAttribute: true,
                     notify: true
                 }
+
+                // Events
+                
+                /**
+                 * Fired when the transfer function is updated/modified.
+                 *
+                 * @event updated-tf
+                 */
             },
 
             _x3domSelectorChanged: function(newValue, oldValue) {
